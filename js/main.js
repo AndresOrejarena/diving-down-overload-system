@@ -14,6 +14,7 @@ const player = {
     dy: 0,
     gravity: 2,
     jump_force: 30,
+    onGround: true,
 };
 
 const keys = {};
@@ -35,23 +36,23 @@ function update() {
     } else {
         player.dx = 0;
     }
-    if (keys["ArrowUp"]) {
+    if (keys["ArrowUp"] && player.onGround) {
         player.dy = -player.jump_force;
+        player.onGround = false;
     }
+
+    player.dy += player.gravity;
 
     player.x += player.dx;
-    player.y -= player.dy;
+    player.y += player.dy;
 
-    if (player.dy > 0) {
-        player.dy += player.jump_force;
-    }
-    else {
+    if (player.y + player.height >= canvas.height - 50) {
+        player.y = canvas.height - 50 - player.height;
         player.dy = 0;
+        player.onGround = true;
     }
 
 
-
-    // Limites de pantalla
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width)
         player.x = canvas.width - player.width;
