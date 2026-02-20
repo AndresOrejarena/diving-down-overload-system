@@ -128,4 +128,6 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+window.onload = function() {
+    gameLoop();
+};
