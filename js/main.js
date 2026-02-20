@@ -20,7 +20,7 @@ fetch("json/map1.json")
 
 const player = {
     x: 100,
-    y: canvas.height - 120,
+    y: 0,
     width: 50,
     height: 50,
     speed: 5,
