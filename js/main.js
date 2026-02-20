@@ -40,9 +40,16 @@ function update() {
     }
 
     player.x += player.dx;
-    player.y += player.dy;
+    player.y -= player.dy;
 
-    player.dy += player.jump_force;
+    if (player.dy > 0) {
+        player.dy += player.jump_force;
+    }
+    else {
+        player.dy = 0;
+    }
+
+
 
     // Limites de pantalla
     if (player.x < 0) player.x = 0;
