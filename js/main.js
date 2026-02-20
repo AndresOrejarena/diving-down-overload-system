@@ -20,14 +20,14 @@ fetch("json/map1.json")
 
 const player = {
     x: 100,
-    y: canvas.height - 100,
+    y: canvas.height - 120,
     width: 50,
     height: 50,
     speed: 5,
     dx: 0,
     dy: 0,
-    gravity: 2,
-    jump_force: 30,
+    gravity: 1,
+    jump_force: 24,
     onGround: true,
 };
 
@@ -48,7 +48,12 @@ document.addEventListener("keyup", (e) => {
     keys[e.key] = false;
 });
 
+
 function update() {
+
+    let previousY = player.y;
+
+    // INPUT HORIZONTAL
     if (keys["ArrowRight"]) {
         player.dx = player.speed;
     } else if (keys["ArrowLeft"]) {
@@ -56,51 +61,55 @@ function update() {
     } else {
         player.dx = 0;
     }
-    if (keys["ArrowUp"] && player.onGround) {
-        player.dy = -player.jump_force;
-        player.onGround = false;
-    }
 
+    // APLICAR GRAVEDAD
     player.dy += player.gravity;
 
-    player.x += player.dx;
+    // MOVER
     player.y += player.dy;
+    player.x += player.dx;
 
-    if (player.y + player.height >= canvas.height - 50) {
-        player.y = canvas.height - 50 - player.height;
-        player.dy = 0;
-        player.onGround = true;
-    }
-
+    // LIMITES HORIZONTALES
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > worldWidth)
         player.x = worldWidth - player.width;
 
-    camera.x = Math.max(
-        0,
-        Math.min(worldWidth - canvas.width, player.x - canvas.width / 2)
-    );
+    // RESET GROUND
+    player.onGround = false;
 
+    // COLISIONES
     platforms.forEach(platform => {
-        if (
+
+        const isHorizontallyColliding =
             player.x < platform.x + platform.width &&
-            player.x + player.width > platform.x &&
-            player.y + player.height < platform.y + platform.height &&
-            player.y + player.height + player.dy >= platform.y
+            player.x + player.width > platform.x;
+
+        if (!isHorizontallyColliding) return;
+
+        if (
+            player.dy >= 0 &&
+            previousY + player.height <= platform.y &&
+            player.y + player.height >= platform.y
         ) {
             player.y = platform.y - player.height;
             player.dy = 0;
             player.onGround = true;
         }
     });
-}
 
+    // SALTO (DESPUÉS de saber si está en el suelo)
+    if (keys["ArrowUp"] && player.onGround) {
+        player.dy = -player.jump_force;
+        player.onGround = false;
+    }
+
+    camera.x = Math.max(
+        0,
+        Math.min(worldWidth - canvas.width, player.x - canvas.width / 2)
+    );
+}
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Piso
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
 
     // Jugador
     ctx.fillStyle = "cyan";

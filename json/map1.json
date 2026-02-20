@@ -1,8 +1,8 @@
 {
   "worldWidth": 2000,
-  "worldHeight": 600,
+  "worldHeight": 700,
   "platforms": [
-    { "x": 0, "y": 550, "width": 2000, "height": 50 },
+    { "x": 0, "y": 650, "width": 2000, "height": 50 },
     { "x": 400, "y": 450, "width": 200, "height": 20 },
     { "x": 700, "y": 350, "width": 150, "height": 20 }
   ]
