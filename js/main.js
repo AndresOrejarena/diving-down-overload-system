@@ -35,7 +35,7 @@ function update() {
     } else {
         player.dx = 0;
     }
-    if (Keys["ArrowUp"]) {
+    if (keys["ArrowUp"]) {
         player.dy = -player.jump_force;
     }
 
