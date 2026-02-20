@@ -10,7 +10,10 @@ const player = {
     width: 50,
     height: 50,
     speed: 5,
-    dx: 0
+    dx: 0,
+    dy: 0,
+    gravity: 2,
+    jump_force: 30,
 };
 
 const keys = {};
@@ -32,8 +35,14 @@ function update() {
     } else {
         player.dx = 0;
     }
+    if (Keys["ArrowUp"]) {
+        player.dy = -player.jump_force;
+    }
 
     player.x += player.dx;
+    player.y += player.dy;
+
+    player.dy += player.jump_force;
 
     // Limites de pantalla
     if (player.x < 0) player.x = 0;
