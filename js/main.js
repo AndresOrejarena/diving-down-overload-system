@@ -4,6 +4,20 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+
+const platforms = [];
+let worldWidth = 2000;
+let worldHeight = 600;
+
+fetch("json/map1.json")
+    .then(res => res.json())
+    .then(data => {
+         worldWidth = data.worldWidth;
+         worldHeight = data.worldHeight;
+        platforms.push(...data.platforms);
+    });
+
+
 const player = {
     x: 100,
     y: canvas.height - 100,
@@ -17,7 +31,14 @@ const player = {
     onGround: true,
 };
 
+const camera = {
+    x: 0,
+    y: 0
+};
+
 const keys = {};
+
+
 
 document.addEventListener("keydown", (e) => {
     keys[e.key] = true;
@@ -28,7 +49,6 @@ document.addEventListener("keyup", (e) => {
 });
 
 function update() {
-    // Movimiento horizontal
     if (keys["ArrowRight"]) {
         player.dx = player.speed;
     } else if (keys["ArrowLeft"]) {
@@ -52,10 +72,27 @@ function update() {
         player.onGround = true;
     }
 
-
     if (player.x < 0) player.x = 0;
-    if (player.x + player.width > canvas.width)
-        player.x = canvas.width - player.width;
+    if (player.x + player.width > worldWidth)
+        player.x = worldWidth - player.width;
+
+    camera.x = Math.max(
+        0,
+        Math.min(worldWidth - canvas.width, player.x - canvas.width / 2)
+    );
+
+    platforms.forEach(platform => {
+        if (
+            player.x < platform.x + platform.width &&
+            player.x + player.width > platform.x &&
+            player.y + player.height < platform.y + platform.height &&
+            player.y + player.height + player.dy >= platform.y
+        ) {
+            player.y = platform.y - player.height;
+            player.dy = 0;
+            player.onGround = true;
+        }
+    });
 }
 
 function draw() {
@@ -67,7 +104,22 @@ function draw() {
 
     // Jugador
     ctx.fillStyle = "cyan";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.fillRect(
+        player.x - camera.x,
+        player.y - camera.y,
+        player.width,
+        player.height
+    );
+
+
+    platforms.forEach(platform => {
+        ctx.fillRect(
+            platform.x - camera.x,
+            platform.y - camera.y,
+            platform.width,
+            platform.height
+        );
+    });
 }
 
 function gameLoop() {
