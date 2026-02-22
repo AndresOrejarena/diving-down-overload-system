@@ -19,16 +19,18 @@ fetch("json/map1.json")
 
 const colorList = ["orange", "blue", "green", "purple"];
 
+let RemoveCroachingHeigh = true;
+
 const player = {
     x: 100,
     y: 0,
     width: 30,
     height: 40,
-    speed: 2,
+    speed: 6*60,
     dx: 0,
     dy: 0,
-    gravity: 1,
-    jump_force: 24,
+    gravity: 2000,
+    jump_force: 1000,
     onGround: true,
     blockColor: "white"
 };
@@ -62,7 +64,7 @@ document.addEventListener("keyup", (e) => {
 
 
 
-function update() {
+function update(dt) {
 
     previousY = player.y;
     previousX = player.x;
@@ -76,74 +78,40 @@ function update() {
     }
 
     //Gravedad
-    player.dy += player.gravity;
-
-    //Mover
-    player.y += player.dy;
-    player.x += player.dx;
-
-
-
-    //Limites horizontales
-    if (player.x < 0) player.x = 0;
-    if (player.x + player.width > worldWidth)
-        player.x = worldWidth - player.width;
+    player.dy += player.gravity*dt;
 
     //Ground reset
     player.onGround = false;
 
-    //Colisiones
+    //Mover
+    player.y += player.dy*dt;
+    const moveY = player.y - previousY;
     platforms.forEach(platform => {
-        if (platform.collision.type === "solid") {
-
-            const isVerticallyColliding =
-                player.y < platform.y + platform.height &&
-                player.y + player.height > platform.y;
-
+        if (platform.collision.type === "solid"){
             const isHorizontallyColliding =
                 player.x < platform.x + platform.width &&
                 player.x + player.width > platform.x;
 
-            if (isVerticallyColliding) {
-                if (
-                    player.dx >= 0 &&
-                    previousX + player.width >= platform.x &&
-                    previousX + player.width - player.dx < platform.x
-                ) {
-                    player.dx = 0
-                    player.x = platform.x - player.width;
-                }
-                if (
-                    player.dx <= 0 &&
-                    previousX <= platform.x + platform.width &&
-                    previousX - player.dx > platform.x + platform.width
-                ) {
-                    player.dx = 0
-                    player.x = platform.x + platform.width;
-                }
-            }
-
-
             if (isHorizontallyColliding) {
                 if (
-                    player.dy >= 0 &&
-                    previousY + player.height >= platform.y &&
-                    previousY + player.height - player.dy < platform.y
+                    moveY > 0 &&
+                    previousY + player.height <= platform.y &&
+                    player.y + player.height >= platform.y
                 ) {
                     player.y = platform.y - player.height;
                     player.dy = 0;
                     player.onGround = true;
                 }
                 if (
-                    player.dy <= 0 &&
-                    player.y <= platform.y + platform.height &&
-                    player.y - player.dy > platform.y + platform.height
+                    moveY < 0 &&
+                    previousY >= platform.y + platform.height &&
+                    player.y <= platform.y + platform.height
                 ) {
-                    if (platform.x + platform.width -player.x  <= player.width*0.25) {
+                    if (platform.x + platform.width - player.x <= player.width * 0.25) {
                         player.x = platform.x + platform.width;
                         return;
                     }
-                    if (player.x + player.width - platform.x <= player.width*0.25){
+                    if (player.x + player.width - platform.x <= player.width * 0.25) {
                         player.x = platform.x - player.width;
                         return;
                     }
@@ -152,20 +120,93 @@ function update() {
                 }
             }
         }
-
     });
-    //Salto (Solo si está en el suelo)
+
+    player.x += player.dx*dt;
+    const moveX = player.x - previousX;
+    platforms.forEach(platform => {
+        if (platform.collision.type === "solid") {
+            const isVerticallyColliding =
+                player.y < platform.y + platform.height &&
+                player.y + player.height > platform.y;
+
+            if (isVerticallyColliding) {
+                if (
+                    moveX > 0 &&
+                    previousX + player.width <= platform.x &&
+                    player.x + player.width >= platform.x
+                ) {
+                    player.dx = 0
+                    player.x = platform.x - player.width;
+                }
+                if (
+                    moveX < 0 &&
+                    previousX >= platform.x + platform.width &&
+                    player.x <= platform.x + platform.width
+                ) {
+                    player.dx = 0
+                    player.x = platform.x + platform.width;
+                }
+            }
+        }
+    });
+
+    //Limites horizontales
+    if (player.x < 0) player.x = 0;
+    if (player.x + player.width > worldWidth)
+        player.x = worldWidth - player.width;
+
+
+    //Colisiones
+
+    if (player.onGround && keys["ArrowDown"]) {
+        if (RemoveCroachingHeigh) {
+            player.height /= 2;
+            player.y += player.height;
+            RemoveCroachingHeigh = false;
+            player.speed /= 2;
+        }
+    } else if (!keys["ArrowDown"] && player.onGround) {
+        if (!RemoveCroachingHeigh) {
+            let canGetUp = true;
+            const newHeight = player.height * 2;
+            const newY = player.y - player.height;
+
+            for (let platform of platforms) {
+
+                if (platform.collision.type !== "solid") continue;
+
+                const wouldCollide =
+                    player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    newY < platform.y + platform.height &&
+                    newY + newHeight > platform.y;
+
+                if (wouldCollide) {
+                    canGetUp = false;
+                    break;
+                }
+            }
+            if (canGetUp) {
+                player.y = newY;
+                player.height = newHeight;
+                RemoveCroachingHeigh = true;
+                player.speed *= 2;
+            }
+        }
+    }
+
     if (keys["ArrowUp"] && player.onGround) {
         player.dy = -player.jump_force;
         player.onGround = false;
     }
 
-    //Actualizacion de la posicion de la camara
     camera.x = Math.max(
         0,
         Math.min(worldWidth - canvas.width, player.x - canvas.width / 2)
     );
 }
+
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -188,12 +229,20 @@ function draw() {
     });
 }
 
-function gameLoop() {
-    update();
+let lastTime = 0;
+
+function gameLoop(currentTime) {
+
+    let deltaTime = (currentTime - lastTime) / 1000;
+    lastTime = currentTime;
+
+    deltaTime = Math.min(deltaTime, 0.016);
+    update(deltaTime);
     draw();
+
     requestAnimationFrame(gameLoop);
 }
 
-window.onload = function() {
-    gameLoop();
+window.onload = function () {
+    requestAnimationFrame(gameLoop);
 };
