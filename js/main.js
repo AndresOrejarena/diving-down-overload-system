@@ -32,7 +32,11 @@ const player = {
     gravity: 2000,
     jump_force: 1000,
     onGround: true,
-    blockColor: "white"
+    blockColor: "white",
+    coyoteTime: 0,
+    coyoteDuration: 0.1,
+    jumpBuffer: 0,
+    jumpBufferDuration: 0.1 ,
 };
 
 const camera = {
@@ -158,7 +162,6 @@ function update(dt) {
 
 
     //Colisiones
-
     if (player.onGround && keys["ArrowDown"]) {
         if (RemoveCroachingHeigh) {
             player.height /= 2;
@@ -196,10 +199,25 @@ function update(dt) {
         }
     }
 
-    if (keys["ArrowUp"] && player.onGround) {
+
+    if (player.onGround) {
+        player.coyoteTime = player.coyoteDuration;
+    } else {
+        player.coyoteTime -= dt;
+    }
+    if (keys["ArrowUp"]) {
+        player.jumpBuffer = player.jumpBufferDuration;
+    }
+
+    if (player.jumpBuffer > 0 && player.coyoteTime > 0) {
+
+        player.jumpBuffer = 0;
+        player.coyoteTime = 0;
         player.dy = -player.jump_force;
         player.onGround = false;
     }
+
+    player.jumpBuffer = Math.max(player.jumpBuffer - dt, 0);
 
     camera.x = Math.max(
         0,
