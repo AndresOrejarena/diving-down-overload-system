@@ -35,6 +35,8 @@ resize();
 const platforms = [];
 let worldWidth = 2000;
 let worldHeight = 600;
+const spritesheet = new Image()
+spritesheet.src = "media/html.png";
 
 fetch("json/map1.json")
     .then(res => res.json())
@@ -43,7 +45,97 @@ fetch("json/map1.json")
         worldWidth = data.worldWidth;
         worldHeight = data.worldHeight;
         platforms.push(...data.platforms);
+        currentLevel = new Level(data, spritesheet);
     });
+
+class Level {
+    constructor(data, spritesheet) {
+        this.worldWidth = data.worldWidth;
+        this.worldHeight = data.worldHeight;
+        this.platforms = data.platforms;
+        this.tileSize = 15;
+        this.spritesheet = spritesheet;
+
+        this.buildStaticCanvas();
+    }
+
+    buildStaticCanvas() {
+        this.canvas = document.createElement("canvas");
+        this.canvas.width = this.worldWidth;
+        this.canvas.height = this.worldHeight;
+
+        this.ctx = this.canvas.getContext("2d");
+        this.ctx.imageSmoothingEnabled = false;
+
+        this.renderPlatforms();
+    }
+
+    drawPlatform(p) {
+        const tilesX = Math.ceil(p.width / this.tileSize);
+        const tilesY = Math.ceil(p.height / this.tileSize);
+
+        for (let y = 0; y < tilesY; y++) {
+            for (let x = 0; x < tilesX; x++) {
+
+                const worldX = p.x + x * this.tileSize;
+                const worldY = p.y + y * this.tileSize;
+
+                // Aquí decides qué sprite usar:
+                const sprite = this.getSpriteForPosition(x, y, tilesX, tilesY);
+
+                this.ctx.drawImage(
+                    this.spritesheet,
+                    sprite.sx,
+                    sprite.sy,
+                    this.tileSize,
+                    this.tileSize,
+                    worldX,
+                    worldY,
+                    this.tileSize,
+                    this.tileSize
+                );
+            }
+        }
+    }
+
+    renderPlatforms() {
+        for (const p of this.platforms) {
+            this.drawPlatform(p);
+        }
+    }
+
+    getSpriteForPosition(x, y, maxX, maxY) {
+        if (maxX >= 2 && maxY >= 2) {
+            if (x === 0 && y === 0) return {sx: 0, sy: 0};
+            if (x === maxX - 1 && y === maxY - 1) return {sx: 15, sy: 15};
+            if (x === maxX - 1 && y === 0) return {sx: 15, sy: 0};
+            if (x === 0 && y === maxY - 1) return {sx: 0, sy: 15};
+            if ((x > 0 && x < maxX - 1) && y === 0) return {sx: 0, sy: 30}
+            if ((x > 0 && x < maxX - 1) && y === maxY - 1) return {sx: 0, sy: 45}
+            if (x === 0 && (y > 0 && y < maxY - 1)) return {sx: 15, sy: 30}
+            if (x === maxX - 1 && (y > 0 && y < maxY - 1)) return {sx: 15, sy: 45}
+
+            return {sx: 0, sy: 105};
+        }
+        else{
+            if (maxX > maxY){
+                if (x === 0) return {sx: 0, sy: 60};
+                if (x === maxX -1) return {sx:15, sy: 60};
+                else return {sx: 0, sy: 90}
+            }
+            else{
+                if (y === 0) return {sx: 0, sy: 75};
+                if (y === maxY -1) return {sx:15, sy: 75};
+                else return {sx: 15, sy: 90}
+            }
+        }
+    }
+
+
+    draw(ctx, camera) {
+        ctx.drawImage(this.canvas, -camera.x, -camera.y);
+    }
+}
 
 
 let RemoveCroachingHeigh = true;
@@ -272,6 +364,8 @@ function draw() {
             platform.height
         )
     });
+
+    currentLevel.draw(ctx, camera);
 }
 
 let lastTime = 0;

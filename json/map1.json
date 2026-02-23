@@ -1,11 +1,12 @@
-{
-  "worldWidth": 2000,
-  "worldHeight": 700,
-  "platforms": [
-    { "x": 0, "y": 650, "width": 2000, "height": 50, "collision": {"type": "solid"} },
-    { "x": 400, "y": 450, "width": 180, "height": 180, "collision": {"type": "solid"} },
-    { "x": 700, "y": 450, "width": 160, "height": 20, "collision": {"type": "solid"} },
-    { "x": 700, "y": 620, "width": 160, "height": 10, "collision": {"type": "solid"} }
+  {
+    "worldWidth": 2000,
+    "worldHeight": 700,
+    "platforms": [
+      { "x": 0, "y": 670, "width": 2000, "height": 30, "collision": {"type": "solid"} },
+      { "x": 400, "y": 450, "width": 175, "height": 105, "collision": {"type": "solid"} },
+      { "x": 700, "y": 450, "width": 150, "height": 30, "collision": {"type": "solid"} },
+      { "x": 700, "y": 615, "width": 150, "height": 15, "collision": {"type": "solid"} },
+      { "x": 1000, "y": 400, "width": 15, "height": 150, "collision": {"type": "solid"} }
 
-  ]
-}
+    ]
+  }
