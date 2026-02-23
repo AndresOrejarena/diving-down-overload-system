@@ -1,8 +1,35 @@
+const BASE_WIDTH = 1280;
+const BASE_HEIGHT = 720;
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+
+function resize() {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    const scale = Math.min(
+        windowWidth / BASE_WIDTH,
+        windowHeight / BASE_HEIGHT
+    );
+
+    const scaledWidth = BASE_WIDTH * scale;
+    const scaledHeight = BASE_HEIGHT * scale;
+
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+
+    canvas.style.position = "absolute";
+    canvas.style.left = (windowWidth - scaledWidth) / 2 + "px";
+    canvas.style.top = (windowHeight - scaledHeight) / 2 + "px";
+
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+}
+
+window.addEventListener("resize", resize);
+resize();
 
 
 const platforms = [];
@@ -12,12 +39,12 @@ let worldHeight = 600;
 fetch("json/map1.json")
     .then(res => res.json())
     .then(data => {
-         worldWidth = data.worldWidth;
-         worldHeight = data.worldHeight;
+
+        worldWidth = data.worldWidth;
+        worldHeight = data.worldHeight;
         platforms.push(...data.platforms);
     });
 
-const colorList = ["orange", "blue", "green", "purple"];
 
 let RemoveCroachingHeigh = true;
 
@@ -32,7 +59,7 @@ const player = {
     gravity: 2000,
     jump_force: 1000,
     onGround: true,
-    blockColor: "white",
+    blockColor: "black",
     coyoteTime: 0,
     coyoteDuration: 0.1,
     jumpBuffer: 0,
@@ -243,7 +270,7 @@ function draw() {
             platform.y - camera.y,
             platform.width,
             platform.height
-        );
+        )
     });
 }
 
