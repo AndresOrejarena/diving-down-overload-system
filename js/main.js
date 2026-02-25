@@ -1,9 +1,10 @@
-const BASE_WIDTH = 1280;
-const BASE_HEIGHT = 720;
+const BASE_WIDTH = 1024;
+const BASE_HEIGHT = 576;
+const deadZoneWidth = 400;
 
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
+ctx.imageSmoothingEnabled = false;
 
 
 function resize() {
@@ -18,15 +19,16 @@ function resize() {
     const scaledWidth = BASE_WIDTH * scale;
     const scaledHeight = BASE_HEIGHT * scale;
 
-    canvas.width = scaledWidth;
-    canvas.height = scaledHeight;
+    canvas.width = BASE_WIDTH;
+    canvas.height = BASE_HEIGHT;
+
+    canvas.style.position = "absolute";
+    canvas.style.width = scaledWidth + "px";
+    canvas.style.height = scaledHeight + "px";
 
     canvas.style.position = "absolute";
     canvas.style.left = (windowWidth - scaledWidth) / 2 + "px";
-    canvas.style.top = (windowHeight - scaledHeight) / 2 + "px";
-
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
-}
+    canvas.style.top = (windowHeight - scaledHeight) / 2 + "px";}
 
 window.addEventListener("resize", resize);
 resize();
@@ -38,22 +40,26 @@ let worldHeight = 600;
 const spritesheet = new Image()
 spritesheet.src = "media/html.png";
 
-fetch("json/map1.json")
-    .then(res => res.json())
-    .then(data => {
+spritesheet.onload = () => {
+    fetch("json/map1.json")
+        .then(res => res.json())
+        .then(data => {
 
-        worldWidth = data.worldWidth;
-        worldHeight = data.worldHeight;
-        platforms.push(...data.platforms);
-        currentLevel = new Level(data, spritesheet);
-    });
+            worldWidth = data.worldWidth;
+            worldHeight = data.worldHeight;
+            platforms.push(...data.platforms);
+            currentLevel = new Level(data, spritesheet);
+
+            requestAnimationFrame(gameLoop);
+        });
+};
 
 class Level {
     constructor(data, spritesheet) {
         this.worldWidth = data.worldWidth;
         this.worldHeight = data.worldHeight;
         this.platforms = data.platforms;
-        this.tileSize = 15;
+        this.tileSize = 20;
         this.spritesheet = spritesheet;
 
         this.buildStaticCanvas();
@@ -80,7 +86,6 @@ class Level {
                 const worldX = p.x + x * this.tileSize;
                 const worldY = p.y + y * this.tileSize;
 
-                // Aquí decides qué sprite usar:
                 const sprite = this.getSpriteForPosition(x, y, tilesX, tilesY);
 
                 this.ctx.drawImage(
@@ -107,26 +112,26 @@ class Level {
     getSpriteForPosition(x, y, maxX, maxY) {
         if (maxX >= 2 && maxY >= 2) {
             if (x === 0 && y === 0) return {sx: 0, sy: 0};
-            if (x === maxX - 1 && y === maxY - 1) return {sx: 15, sy: 15};
-            if (x === maxX - 1 && y === 0) return {sx: 15, sy: 0};
-            if (x === 0 && y === maxY - 1) return {sx: 0, sy: 15};
-            if ((x > 0 && x < maxX - 1) && y === 0) return {sx: 0, sy: 30}
-            if ((x > 0 && x < maxX - 1) && y === maxY - 1) return {sx: 0, sy: 45}
-            if (x === 0 && (y > 0 && y < maxY - 1)) return {sx: 15, sy: 30}
-            if (x === maxX - 1 && (y > 0 && y < maxY - 1)) return {sx: 15, sy: 45}
+            if (x === maxX - 1 && y === maxY - 1) return {sx: 20, sy: 20};
+            if (x === maxX - 1 && y === 0) return {sx: 20, sy: 0};
+            if (x === 0 && y === maxY - 1) return {sx: 0, sy: 20};
+            if ((x > 0 && x < maxX - 1) && y === 0) return {sx: 0, sy: 40}
+            if ((x > 0 && x < maxX - 1) && y === maxY - 1) return {sx: 0, sy: 60}
+            if (x === 0 && (y > 0 && y < maxY - 1)) return {sx: 20, sy: 40}
+            if (x === maxX - 1 && (y > 0 && y < maxY - 1)) return {sx: 20, sy: 60}
 
-            return {sx: 0, sy: 105};
+            return {sx: 0, sy: 140};
         }
         else{
             if (maxX > maxY){
-                if (x === 0) return {sx: 0, sy: 60};
-                if (x === maxX -1) return {sx:15, sy: 60};
-                else return {sx: 0, sy: 90}
+                if (x === 0) return {sx: 0, sy: 80};
+                if (x === maxX -1) return {sx:20, sy: 80};
+                else return {sx: 0, sy: 120}
             }
             else{
-                if (y === 0) return {sx: 0, sy: 75};
-                if (y === maxY -1) return {sx:15, sy: 75};
-                else return {sx: 15, sy: 90}
+                if (y === 0) return {sx: 0, sy: 100};
+                if (y === maxY -1) return {sx:20, sy: 100};
+                else return {sx: 20, sy: 120}
             }
         }
     }
@@ -172,6 +177,9 @@ const hitbox = {
     width: hitboxWidth,
     height: player.height
 };
+
+let crouchOffset = 0;
+const maxCrouchOffset = BASE_HEIGHT / 4;
 
 const keys = {};
 
@@ -282,6 +290,7 @@ function update(dt) {
 
     //Colisiones
     if (player.onGround && keys["ArrowDown"]) {
+        crouchOffset += dt * (maxCrouchOffset);
         if (RemoveCroachingHeigh) {
             player.height /= 2;
             player.y += player.height;
@@ -289,6 +298,7 @@ function update(dt) {
             player.speed /= 2;
         }
     } else if (!keys["ArrowDown"] && player.onGround) {
+        crouchOffset -= dt * (maxCrouchOffset);
         if (!RemoveCroachingHeigh) {
             let canGetUp = true;
             const newHeight = player.height * 2;
@@ -328,6 +338,9 @@ function update(dt) {
         player.jumpBuffer = player.jumpBufferDuration;
     }
 
+
+    crouchOffset = Math.max(0, Math.min(maxCrouchOffset, crouchOffset));
+
     if (player.jumpBuffer > 0 && player.coyoteTime > 0) {
 
         player.jumpBuffer = 0;
@@ -338,34 +351,45 @@ function update(dt) {
 
     player.jumpBuffer = Math.max(player.jumpBuffer - dt, 0);
 
-    camera.x = Math.max(
-        0,
-        Math.min(worldWidth - canvas.width, player.x - canvas.width / 2)
-    );
+
+    const leftDeadZone = camera.x + (BASE_WIDTH - deadZoneWidth) ;
+    const rightDeadZone = camera.x + deadZoneWidth;
+    const LeftX = player.x > leftDeadZone;
+    const RightX = player.x < rightDeadZone;
+    if (RightX || LeftX) {
+        if (LeftX) {
+            camera.x = Math.max(
+                0,
+                Math.round(Math.min(worldWidth - BASE_WIDTH, player.x - BASE_WIDTH + deadZoneWidth))
+            );
+        }
+        else{
+            camera.x = Math.max(
+                0,
+                Math.round(Math.min(worldWidth - BASE_WIDTH, player.x -deadZoneWidth))
+            );
+        }
+    }
+
+    camera.y = Math.max(0,
+        Math.round(Math.min(worldHeight - BASE_HEIGHT, player.y + player.width/2*RemoveCroachingHeigh - BASE_HEIGHT / 2 + crouchOffset))
+    )
+    console.log(player.y + player.width/2*RemoveCroachingHeigh - BASE_HEIGHT / 2 + crouchOffset)
+
 }
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+
+    currentLevel.draw(ctx, camera);
     ctx.fillStyle = player.blockColor;
     ctx.fillRect(
-        player.x - camera.x,
+        Math.round(player.x - camera.x),
         player.y - camera.y,
         player.width,
         player.height
     );
-
-    ctx.fillStyle = "blue";
-    platforms.forEach(platform => {
-        ctx.fillRect(
-            platform.x - camera.x,
-            platform.y - camera.y,
-            platform.width,
-            platform.height
-        )
-    });
-
-    currentLevel.draw(ctx, camera);
 }
 
 let lastTime = 0;
